@@ -1,0 +1,6 @@
+﻿  main.cpp
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 21 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  Vulkan.vcxproj -> C:\Users\chyuy\Documents\Study\Programming\Vulkan\x64\Release\Vulkan.exe
