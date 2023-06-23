@@ -3,7 +3,6 @@
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
-#include <vector>
 
 void HelloTriangleApplication::run()
 {
@@ -50,6 +49,11 @@ void HelloTriangleApplication::cleanup()
 
 void HelloTriangleApplication::createInstance()
 {
+	if ( enableVaildationLayers && !checkValidationLayerSupport() )
+	{
+		throw std::runtime_error( "Validation layers requested, but not available." );
+	}
+
 	VkApplicationInfo appInfo{};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName = "Hello Triangle";
@@ -61,6 +65,15 @@ void HelloTriangleApplication::createInstance()
 	VkInstanceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
+	if ( enableVaildationLayers )
+	{
+		createInfo.enabledLayerCount = static_cast<uint32_t>( validationLayers.size() );
+		createInfo.ppEnabledLayerNames = validationLayers.data();
+	}
+	else
+	{
+		createInfo.enabledLayerCount = 0;
+	}
 
 	uint32_t glfwExtensionCount = 0;
 	const char** glfwExtensions;
@@ -73,3 +86,36 @@ void HelloTriangleApplication::createInstance()
 
 	VkResult result = vkCreateInstance( &createInfo, nullptr, &instance );
 }
+
+bool HelloTriangleApplication::checkValidationLayerSupport()
+{
+	// to list the available layers.
+	uint32_t layerCount = 0;
+	vkEnumerateInstanceLayerProperties( &layerCount, nullptr );
+
+	std::vector<VkLayerProperties> availableLayers( layerCount );
+	vkEnumerateInstanceLayerProperties( &layerCount, availableLayers.data() );
+	
+	// Check if all of the layers in validationLayers
+	bool layerFound = false;
+	for ( const char* layerName : validationLayers )
+	{
+		layerFound = false;
+		
+		for ( const auto& layerProperties : availableLayers )
+		{
+			if ( strcmp( layerName, layerProperties.layerName ) == 0 )
+			{
+				layerFound = true;
+				break;
+			}
+		}
+
+		if ( !layerFound )
+			return false;
+	}
+
+	return true;
+}
+
+

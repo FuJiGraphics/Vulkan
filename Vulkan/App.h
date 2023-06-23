@@ -5,9 +5,21 @@
 // This header includes the Vulkan header automatically.
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h> 
+#include <vector>
 
 const uint32_t WIN_WIDTH  = 800;
 const uint32_t WIN_HEIGHT = 600;
+
+const std::vector<const char*> validationLayers =
+{
+	"VK_LAYER_KHRONOS_validation"
+};
+
+#ifdef NDEBUG
+const bool enableVaildationLayers = false;
+#else
+const bool enableVaildationLayers = true;
+#endif 
 
 class HelloTriangleApplication
 {
@@ -19,6 +31,10 @@ private:
 	void initVulkan();
 	void mainLoop();
 	void cleanup();
+
+private:
+	bool checkValidationLayerSupport();
+	// TODO: 메시지 콜백 레이어 활성화
 
 private:
 	void createInstance();
