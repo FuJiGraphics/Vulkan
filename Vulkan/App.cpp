@@ -5,8 +5,6 @@
 #include <cstdlib>
 #include <optional>
 
-// test
-
 void HelloTriangleApplication::run()
 {
 	initWindow();
