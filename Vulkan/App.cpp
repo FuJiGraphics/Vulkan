@@ -15,8 +15,8 @@ void HelloTriangleApplication::run()
 
 void HelloTriangleApplication::initWindow()
 {
-	// These built-in functions are 22 the first step to the necessary. 
-	glfwInit(); asdasda
+	// These built-in functions are the first step to the necessary. 
+	glfwInit();
 	// GLFW was originally desinged to create an OpenGL context.
 	// we need to tell it to not create an OpenGL context with a subsequent call
 	glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );

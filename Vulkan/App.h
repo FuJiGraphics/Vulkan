@@ -64,6 +64,6 @@ private: // Window Application
 private: // Vulkan API
 	VkInstance instance             = VK_NULL_HANDLE;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-	VkDevice device				    = VK_NULL_HANDLE;
-	VkQueue graphicsQueue		    = VK_NULL_HANDLE;
+	VkDevice device					= VK_NULL_HANDLE;
+	VkQueue graphicsQueue			= VK_NULL_HANDLE;
 };
