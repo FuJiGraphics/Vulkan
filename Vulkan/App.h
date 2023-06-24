@@ -27,9 +27,9 @@ struct QueueFamilyIndices
 };
 
 #ifdef NDEBUG
-const bool enableVaildationLayers = false;
+const bool enableValidationLayers = false;
 #else
-const bool enableVaildationLayers = true;
+const bool enableValidationLayers = true;
 #endif 
 
 class HelloTriangleApplication
@@ -55,10 +55,15 @@ private: // Physical Devices and Queue Families
 	bool isDeviceSuitable( VkPhysicalDevice device );
 	QueueFamilyIndices findQueueFamilies( VkPhysicalDevice device );
 
+private: // Logical Device and queues
+	void createLogicalDevice();
+
 private: // Window Application
 	GLFWwindow* window = nullptr;
 
 private: // Vulkan API
 	VkInstance instance             = VK_NULL_HANDLE;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+	VkDevice device				    = VK_NULL_HANDLE;
+	VkQueue graphicsQueue		    = VK_NULL_HANDLE;
 };

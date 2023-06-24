@@ -34,6 +34,7 @@ void HelloTriangleApplication::initVulkan()
 	// TODO: setupDebugMessenger(); 
 	// https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Validation_layers
 	pickphysicalDevice();
+	createLogicalDevice();
 }
 
 void HelloTriangleApplication::mainLoop()
@@ -46,6 +47,7 @@ void HelloTriangleApplication::mainLoop()
 
 void HelloTriangleApplication::cleanup()
 {
+	vkDestroyDevice( device, nullptr );
 	vkDestroyInstance( instance, nullptr );
 	glfwDestroyWindow( window );
 	glfwTerminate();
@@ -53,7 +55,7 @@ void HelloTriangleApplication::cleanup()
 
 void HelloTriangleApplication::createInstance()
 {
-	if ( enableVaildationLayers && !checkValidationLayerSupport() )
+	if ( enableValidationLayers && !checkValidationLayerSupport() )
 	{
 		throw std::runtime_error( "Validation layers requested, but not available." );
 	}
@@ -69,7 +71,7 @@ void HelloTriangleApplication::createInstance()
 	VkInstanceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
-	if ( enableVaildationLayers )
+	if ( enableValidationLayers )
 	{
 		createInfo.enabledLayerCount = static_cast<uint32_t>( validationLayers.size() );
 		createInfo.ppEnabledLayerNames = validationLayers.data();
@@ -162,6 +164,48 @@ QueueFamilyIndices HelloTriangleApplication::findQueueFamilies( VkPhysicalDevice
 	}
 
 	return indices;
+}
+
+void HelloTriangleApplication::createLogicalDevice()
+{
+	QueueFamilyIndices indices = findQueueFamilies( physicalDevice );
+
+	VkDeviceQueueCreateInfo queueCreateInfo{};
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+	queueCreateInfo.queueCount = 1;
+
+	float queuePriority = 1.0f;
+	queueCreateInfo.pQueuePriorities = &queuePriority;
+
+	VkPhysicalDeviceFeatures deviceFeatures{};
+
+	VkDeviceCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	createInfo.pQueueCreateInfos = &queueCreateInfo;
+	createInfo.queueCreateInfoCount = 1;
+
+	createInfo.pEnabledFeatures = &deviceFeatures;
+
+	createInfo.enabledExtensionCount = 0;
+
+	if ( enableValidationLayers )
+	{
+		createInfo.enabledLayerCount = static_cast<uint32_t>( validationLayers.size() );
+		createInfo.ppEnabledExtensionNames = validationLayers.data();
+	}
+	else
+	{
+		createInfo.enabledLayerCount = 0;
+	}
+
+	VkResult result = vkCreateDevice( physicalDevice, &createInfo, nullptr, &device );
+	if ( result != VK_SUCCESS )
+	{
+		throw std::runtime_error( "Failed to create logical device. " );
+	}
+
+	vkGetDeviceQueue( device, indices.graphicsFamily.value(), 0, &graphicsQueue );
 }
 
 bool HelloTriangleApplication::checkValidationLayerSupport() const
