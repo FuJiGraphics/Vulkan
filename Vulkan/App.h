@@ -6,6 +6,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h> 
 #include <vector>
+#include <optional>
 
 const uint32_t WIN_WIDTH  = 800;
 const uint32_t WIN_HEIGHT = 600;
@@ -13,6 +14,16 @@ const uint32_t WIN_HEIGHT = 600;
 const std::vector<const char*> validationLayers =
 {
 	"VK_LAYER_KHRONOS_validation"
+};
+
+struct QueueFamilyIndices
+{
+	std::optional<uint32_t> graphicsFamily;
+
+	bool isComplete() const
+	{
+		return graphicsFamily.has_value();
+	}
 };
 
 #ifdef NDEBUG
@@ -33,15 +44,21 @@ private:
 	void cleanup();
 
 private:
-	bool checkValidationLayerSupport();
+	bool checkValidationLayerSupport() const;
 	// TODO: 메시지 콜백 레이어 활성화
 
 private:
 	void createInstance();
 
+private: // Physical Devices and Queue Families
+	void pickphysicalDevice();
+	bool isDeviceSuitable( VkPhysicalDevice device );
+	QueueFamilyIndices findQueueFamilies( VkPhysicalDevice device );
+
 private: // Window Application
 	GLFWwindow* window = nullptr;
 
 private: // Vulkan API
-	VkInstance instance;
+	VkInstance instance             = VK_NULL_HANDLE;
+	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 };

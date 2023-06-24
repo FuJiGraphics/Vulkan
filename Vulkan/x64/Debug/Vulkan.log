@@ -1,5 +1,17 @@
 ﻿  App.cpp
+  The contents of <optional> are available only with C++17 or later.
+C:\Users\chyuy\Documents\Study\Programming\Vulkan\Vulkan\App.h(21,7): error C2039: 'optional': is not a member of 'std'
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Tools\MSVC\14.29.30133\include\vector(24): message : see declaration of 'std'
+C:\Users\chyuy\Documents\Study\Programming\Vulkan\Vulkan\App.h(21,15): error C2143: syntax error: missing ';' before '<'
+C:\Users\chyuy\Documents\Study\Programming\Vulkan\Vulkan\App.h(21,15): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\chyuy\Documents\Study\Programming\Vulkan\Vulkan\App.h(21,40): error C2238: unexpected token(s) preceding ';'
+C:\Users\chyuy\Documents\Study\Programming\Vulkan\Vulkan\App.h(22,2): warning C4091: 'static ': ignored on left of 'QueueFamilyIndices' when no variable is declared
   main.cpp
+  The contents of <optional> are available only with C++17 or later.
+C:\Users\chyuy\Documents\Study\Programming\Vulkan\Vulkan\App.h(21,7): error C2039: 'optional': is not a member of 'std'
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional\VC\Tools\MSVC\14.29.30133\include\vector(24): message : see declaration of 'std'
+C:\Users\chyuy\Documents\Study\Programming\Vulkan\Vulkan\App.h(21,15): error C2143: syntax error: missing ';' before '<'
+C:\Users\chyuy\Documents\Study\Programming\Vulkan\Vulkan\App.h(21,15): error C4430: missing type specifier - int assumed. Note: C++ does not support default-int
+C:\Users\chyuy\Documents\Study\Programming\Vulkan\Vulkan\App.h(21,40): error C2238: unexpected token(s) preceding ';'
+C:\Users\chyuy\Documents\Study\Programming\Vulkan\Vulkan\App.h(22,2): warning C4091: 'static ': ignored on left of 'QueueFamilyIndices' when no variable is declared
   Generating Code...
-  LINK : C:\Users\chyuy\Documents\Study\Programming\Vulkan\x64\Debug\Vulkan.exe not found or not built by the last incremental link; performing full link
-  Vulkan.vcxproj -> C:\Users\chyuy\Documents\Study\Programming\Vulkan\x64\Debug\Vulkan.exe

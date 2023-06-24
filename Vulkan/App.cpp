@@ -3,6 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
+#include <optional>
 
 void HelloTriangleApplication::run()
 {
@@ -30,6 +31,9 @@ void HelloTriangleApplication::initWindow()
 void HelloTriangleApplication::initVulkan()
 {
 	createInstance();
+	// TODO: setupDebugMessenger(); 
+	// https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Validation_layers
+	pickphysicalDevice();
 }
 
 void HelloTriangleApplication::mainLoop()
@@ -85,9 +89,82 @@ void HelloTriangleApplication::createInstance()
 	createInfo.enabledLayerCount = 0;
 
 	VkResult result = vkCreateInstance( &createInfo, nullptr, &instance );
+	if ( result != VK_SUCCESS ) 
+	{
+		throw std::runtime_error( "failed to create instance!" );
+	}
 }
 
-bool HelloTriangleApplication::checkValidationLayerSupport()
+void HelloTriangleApplication::pickphysicalDevice()
+{
+	uint32_t deviceCount = 0;
+	vkEnumeratePhysicalDevices( instance, &deviceCount, nullptr );
+	if ( deviceCount == 0 )
+	{
+		throw std::runtime_error( "Failed to find GPUs with Vulkan support." );
+	}
+
+	std::vector<VkPhysicalDevice> devices( deviceCount );
+	vkEnumeratePhysicalDevices( instance, &deviceCount, devices.data() );
+	for ( const auto& device : devices )
+	{
+		if ( isDeviceSuitable( device ) )
+		{
+			physicalDevice = device;
+			break;
+		}
+	}
+	if ( physicalDevice == VK_NULL_HANDLE )
+	{
+		throw std::runtime_error( "Failed to find a suitable GPU." );
+	}
+}
+
+bool HelloTriangleApplication::isDeviceSuitable( VkPhysicalDevice device )
+{
+	// TODO : check a suitable base device
+	
+	// like the name, type and Vulkan version
+	/*VkPhysicalDeviceProperties deviceProperties;
+	vkGetPhysicalDeviceProperties( device, &deviceProperties );*/
+
+	// like texture compression, 64bit floats, multi viewport rendering
+	/*VkPhysicalDeviceFeatures deviceFeatures;
+	vkGetPhysicalDeviceFeatures( device, &deviceFeatures );*/
+	QueueFamilyIndices indices = findQueueFamilies( device );
+
+	return indices.isComplete();
+}
+
+QueueFamilyIndices HelloTriangleApplication::findQueueFamilies( VkPhysicalDevice device )
+{
+	QueueFamilyIndices indices;
+
+	uint32_t queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties( device, &queueFamilyCount, nullptr );
+
+	std::vector<VkQueueFamilyProperties> queueFamilies( queueFamilyCount );
+	vkGetPhysicalDeviceQueueFamilyProperties( device, &queueFamilyCount, queueFamilies.data() );
+
+	int i = 0;
+	for ( const auto& queueFamily : queueFamilies )
+	{
+		if ( queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT )
+		{
+			indices.graphicsFamily = i;
+		}
+
+		if ( indices.isComplete() )
+		{
+			break;
+		}
+		i++;
+	}
+
+	return indices;
+}
+
+bool HelloTriangleApplication::checkValidationLayerSupport() const
 {
 	// to list the available layers.
 	uint32_t layerCount = 0;
