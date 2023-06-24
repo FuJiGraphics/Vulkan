@@ -4,7 +4,8 @@
 
 // This header includes the Vulkan header automatically.
 #define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h> 
+#include <GLFW/glfw3.h>
+
 #include <vector>
 #include <optional>
 
@@ -19,10 +20,11 @@ const std::vector<const char*> validationLayers =
 struct QueueFamilyIndices
 {
 	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> presentFamily;
 
 	bool isComplete() const
 	{
-		return graphicsFamily.has_value();
+		return graphicsFamily.has_value() && presentFamily.has_value();
 	}
 };
 
@@ -49,6 +51,7 @@ private:
 
 private:
 	void createInstance();
+	void createSurface();
 
 private: // Physical Devices and Queue Families
 	void pickphysicalDevice();
@@ -62,8 +65,10 @@ private: // Window Application
 	GLFWwindow* window = nullptr;
 
 private: // Vulkan API
-	VkInstance instance             = VK_NULL_HANDLE;
+	VkInstance		 instance       = VK_NULL_HANDLE;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-	VkDevice device					= VK_NULL_HANDLE;
-	VkQueue graphicsQueue			= VK_NULL_HANDLE;
+	VkDevice		 device			= VK_NULL_HANDLE;
+	VkQueue			 graphicsQueue	= VK_NULL_HANDLE;
+	VkSurfaceKHR	 surface		= VK_NULL_HANDLE;
+	VkQueue			 presentQueue   = VK_NULL_HANDLE;
 };
