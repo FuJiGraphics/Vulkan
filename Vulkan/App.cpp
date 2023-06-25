@@ -19,7 +19,7 @@ void HelloTriangleApplication::initWindow()
 	// These built-in functions are the first step to the necessary. 
 	glfwInit();
 	// GLFW was originally desinged to create an OpenGL context.
-	// we need to tell it to not create an OpenGL ctext with a subsequent call
+	// we need to tell it to not create an OpenGL context with a subsequent call
 	glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
 	// to Disable the configuration a resize windows. 
 	glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE );
