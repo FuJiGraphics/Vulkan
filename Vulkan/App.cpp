@@ -458,7 +458,6 @@ bool HelloTriangleApplication::checkValidationLayerSupport() const
 	std::vector<VkLayerProperties> availableLayers( layerCount );
 	vkEnumerateInstanceLayerProperties( &layerCount, availableLayers.data() );
 
-	// ---
 	// Check if all of the layers in validationLayers
 	bool layerFound = false;
 	for ( const char* layerName : validationLayers )
