@@ -9,12 +9,17 @@
 #include <vector>
 #include <optional>
 
-const uint32_t WIN_WIDTH  = 800;
-const uint32_t WIN_HEIGHT = 600;
+const uint32_t gWinWidth  = 800;
+const uint32_t gWinHeight = 600;
 
 const std::vector<const char*> validationLayers =
 {
 	"VK_LAYER_KHRONOS_validation"
+};
+
+const std::vector<const char*> deviceExtensions =
+{
+	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
 struct QueueFamilyIndices
@@ -26,6 +31,13 @@ struct QueueFamilyIndices
 	{
 		return graphicsFamily.has_value() && presentFamily.has_value();
 	}
+};
+
+struct SwapChainSupportDetails
+{
+	VkSurfaceCapabilitiesKHR capabilities;
+	std::vector<VkSurfaceFormatKHR> formats;
+	std::vector<VkPresentModeKHR> presentModes;
 };
 
 #ifdef NDEBUG
@@ -52,11 +64,19 @@ private:
 private:
 	void createInstance();
 	void createSurface();
+	void createSwapChain();
+
+	SwapChainSupportDetails querySwapChainSupport( VkPhysicalDevice device );
+	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats ) const;
+	VkPresentModeKHR chooseSwapPresentMode( const std::vector<VkPresentModeKHR>& availablePresentModes ) const;
+	VkExtent2D chooseSwapExtent( const VkSurfaceCapabilitiesKHR& capabilities ) const;
 
 private: // Physical Devices and Queue Families
 	void pickphysicalDevice();
 	bool isDeviceSuitable( VkPhysicalDevice device );
 	QueueFamilyIndices findQueueFamilies( VkPhysicalDevice device );
+	bool checkDeviceExtensionSupport( VkPhysicalDevice device );
+	
 
 private: // Logical Device and queues
 	void createLogicalDevice();
@@ -71,4 +91,10 @@ private: // Vulkan API
 	VkQueue			 graphicsQueue	= VK_NULL_HANDLE;
 	VkSurfaceKHR	 surface		= VK_NULL_HANDLE;
 	VkQueue			 presentQueue   = VK_NULL_HANDLE;
+	VkSwapchainKHR   swapChain      = VK_NULL_HANDLE;
+
+	std::vector<VkImage> swapChainImages;
+	std::vector<VkImageView> swapChainImageViews;
+	VkFormat swapChainImageFormat;
+	VkExtent2D swapChainExtent;
 };
