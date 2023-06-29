@@ -65,6 +65,7 @@ private:
 	void createInstance();
 	void createSurface();
 	void createSwapChain();
+	void createImageView();
 
 	SwapChainSupportDetails querySwapChainSupport( VkPhysicalDevice device );
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats ) const;
