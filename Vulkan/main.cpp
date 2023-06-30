@@ -1,19 +1,19 @@
-#include <iostream>
 #include "App.h"
+#include <iostream>
 
 int main()
 {
-	HelloTriangleApplication app;
+    HelloTriangleApplication app;
 
-	try
-	{
-		app.run();
-	}
-	catch ( const std::exception& e )
-	{
-		std::cerr << e.what() << std::endl;
-		return EXIT_FAILURE;
-	}
+    try
+    {
+        app.run();
+    }
+    catch ( const std::exception &e )
+    {
+        std::cerr << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

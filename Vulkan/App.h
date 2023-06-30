@@ -6,96 +6,97 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include <vector>
 #include <optional>
+#include <vector>
+#include <fstream>
 
-const uint32_t gWinWidth  = 800;
+const uint32_t gWinWidth = 800;
 const uint32_t gWinHeight = 600;
 
-const std::vector<const char*> validationLayers =
-{
-	"VK_LAYER_KHRONOS_validation"
-};
+const std::vector<const char *> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 
-const std::vector<const char*> deviceExtensions =
-{
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME
-};
+const std::vector<const char *> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
 struct QueueFamilyIndices
 {
-	std::optional<uint32_t> graphicsFamily;
-	std::optional<uint32_t> presentFamily;
+    std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
 
-	bool isComplete() const
-	{
-		return graphicsFamily.has_value() && presentFamily.has_value();
-	}
+    bool isComplete() const
+    {
+        return graphicsFamily.has_value() && presentFamily.has_value();
+    }
 };
 
 struct SwapChainSupportDetails
 {
-	VkSurfaceCapabilitiesKHR capabilities;
-	std::vector<VkSurfaceFormatKHR> formats;
-	std::vector<VkPresentModeKHR> presentModes;
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
 };
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
 #else
 const bool enableValidationLayers = true;
-#endif 
+#endif
 
 class HelloTriangleApplication
 {
 public:
-	void run();
+    void run();
+
+  static std::vector<char> readFile( const std::string &filename );
+
 
 private:
-	void initWindow();
-	void initVulkan();
-	void mainLoop();
-	void cleanup();
+    void initWindow();
+    void initVulkan();
+    void mainLoop();
+    void cleanup();
 
 private:
-	bool checkValidationLayerSupport() const;
-	// TODO: 메시지 콜백 레이어 활성화
+    bool checkValidationLayerSupport() const;
+    // TODO: 메시지 콜백 레이어 활성화
 
 private:
-	void createInstance();
-	void createSurface();
-	void createSwapChain();
-	void createImageView();
-
-	SwapChainSupportDetails querySwapChainSupport( VkPhysicalDevice device );
-	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats ) const;
-	VkPresentModeKHR chooseSwapPresentMode( const std::vector<VkPresentModeKHR>& availablePresentModes ) const;
-	VkExtent2D chooseSwapExtent( const VkSurfaceCapabilitiesKHR& capabilities ) const;
+    void createInstance();
+    void createSurface();
+    void createSwapChain();
+    void createImageView();
+    void createGraphicsPipeline();
+    
+    VkShaderModule createShaderModule( const std::vector<char> &code );
+    SwapChainSupportDetails querySwapChainSupport( VkPhysicalDevice device );
+    VkSurfaceFormatKHR chooseSwapSurfaceFormat( const std::vector<VkSurfaceFormatKHR> &availableFormats ) const;
+    VkPresentModeKHR chooseSwapPresentMode( const std::vector<VkPresentModeKHR> &availablePresentModes ) const;
+    VkExtent2D chooseSwapExtent( const VkSurfaceCapabilitiesKHR &capabilities ) const;
 
 private: // Physical Devices and Queue Families
-	void pickphysicalDevice();
-	bool isDeviceSuitable( VkPhysicalDevice device );
-	QueueFamilyIndices findQueueFamilies( VkPhysicalDevice device );
-	bool checkDeviceExtensionSupport( VkPhysicalDevice device );
-	
+    void pickphysicalDevice();
+    bool isDeviceSuitable( VkPhysicalDevice device );
+    QueueFamilyIndices findQueueFamilies( VkPhysicalDevice device );
+    bool checkDeviceExtensionSupport( VkPhysicalDevice device );
 
 private: // Logical Device and queues
-	void createLogicalDevice();
+    void createLogicalDevice();
 
 private: // Window Application
-	GLFWwindow* window = nullptr;
+    GLFWwindow *window = nullptr;
 
 private: // Vulkan API
-	VkInstance		 instance       = VK_NULL_HANDLE;
-	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-	VkDevice		 device			= VK_NULL_HANDLE;
-	VkQueue			 graphicsQueue	= VK_NULL_HANDLE;
-	VkSurfaceKHR	 surface		= VK_NULL_HANDLE;
-	VkQueue			 presentQueue   = VK_NULL_HANDLE;
-	VkSwapchainKHR   swapChain      = VK_NULL_HANDLE;
+    VkInstance instance = VK_NULL_HANDLE;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
+    VkQueue graphicsQueue = VK_NULL_HANDLE;
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    VkQueue presentQueue = VK_NULL_HANDLE;
+    VkSwapchainKHR swapChain = VK_NULL_HANDLE;
 
-	std::vector<VkImage> swapChainImages;
-	std::vector<VkImageView> swapChainImageViews;
-	VkFormat swapChainImageFormat;
-	VkExtent2D swapChainExtent;
+    std::vector<VkImage> swapChainImages;
+    std::vector<VkImageView> swapChainImageViews;
+    VkFormat swapChainImageFormat;
+    VkExtent2D swapChainExtent;
+
+    VkPipelineLayout pipelineLayout;
 };
