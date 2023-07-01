@@ -46,20 +46,34 @@ class HelloTriangleApplication
 public:
     void run();
 
+private:
   static std::vector<char> readFile( const std::string &filename );
-
+  static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                       VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                       const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+                                                       void *pUserData );
+  VkResult CreateDebugUtilsMessengerEXT( VkInstance instance,
+                                         const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+                                         const VkAllocationCallbacks *pAllocator,
+                                         VkDebugUtilsMessengerEXT *pDebugMessenger );
+  void DestroyDebugUtilsMessengerEXT( VkInstance instance,
+                                      VkDebugUtilsMessengerEXT debugMessenger,
+                                      const VkAllocationCallbacks *pAllocator );
+  void populateDebugMessengerCreateInfo( VkDebugUtilsMessengerCreateInfoEXT &createInfo );
+  std::vector<const char *> getRequiredExtensions();
 
 private:
     void initWindow();
     void initVulkan();
     void mainLoop();
     void cleanup();
+    
+    void drawFrame();
 
 private:
     bool checkValidationLayerSupport() const;
-    // TODO: 메시지 콜백 레이어 활성화
 
-private:
+  private:
     void createInstance();
     void createSurface();
     void createSwapChain();
@@ -67,14 +81,20 @@ private:
     void createRenderPass();
     void createGraphicsPipeline();
     void createFramebuffers();
+    void createCommandPool();
+    void createCommandBuffers();
+    void createSemaphores();
+    void setupDebugMessenger();
 
     VkShaderModule createShaderModule( const std::vector<char> &code );
     SwapChainSupportDetails querySwapChainSupport( VkPhysicalDevice device );
     VkSurfaceFormatKHR chooseSwapSurfaceFormat( const std::vector<VkSurfaceFormatKHR> &availableFormats ) const;
     VkPresentModeKHR chooseSwapPresentMode( const std::vector<VkPresentModeKHR> &availablePresentModes ) const;
     VkExtent2D chooseSwapExtent( const VkSurfaceCapabilitiesKHR &capabilities ) const;
+    
+    void recordCommandBuffer( VkCommandBuffer commandBuffer, uint32_t imageIndex );
 
-private: // Physical Devices and Queue Families
+  private: // Physical Devices and Queue Families
     void pickphysicalDevice();
     bool isDeviceSuitable( VkPhysicalDevice device );
     QueueFamilyIndices findQueueFamilies( VkPhysicalDevice device );
@@ -87,16 +107,19 @@ private: // Window Application
     GLFWwindow *window = nullptr;
 
 private: // Vulkan API
-    VkInstance instance = VK_NULL_HANDLE;
+    VkInstance instance;
+    VkDebugUtilsMessengerEXT debugMessenger;
 
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkDevice device = VK_NULL_HANDLE;
-    VkQueue graphicsQueue = VK_NULL_HANDLE;
-    VkSurfaceKHR surface = VK_NULL_HANDLE;
-    VkQueue presentQueue = VK_NULL_HANDLE;
-    VkSwapchainKHR swapChain = VK_NULL_HANDLE;
+    VkPhysicalDevice    physicalDevice;
+    VkDevice            device;
+    VkQueue             graphicsQueue;
+    VkSurfaceKHR        surface;
+    VkQueue             presentQueue;
+    VkSwapchainKHR      swapChain;
+    VkCommandPool       commandPool;
 
     std::vector<VkFramebuffer> swapChainFramebuffers;
+    std::vector<VkCommandBuffer> commandBuffers;
 
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
