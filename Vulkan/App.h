@@ -65,6 +65,7 @@ private:
     void createSwapChain();
     void createImageView();
     void createGraphicsPipeline();
+    void createRenderPass();
     
     VkShaderModule createShaderModule( const std::vector<char> &code );
     SwapChainSupportDetails querySwapChainSupport( VkPhysicalDevice device );
@@ -98,5 +99,7 @@ private: // Vulkan API
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
 
+    VkRenderPass renderPass;
     VkPipelineLayout pipelineLayout;
+
 };
