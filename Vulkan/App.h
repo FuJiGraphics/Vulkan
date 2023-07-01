@@ -83,9 +83,9 @@ private:
     void createFramebuffers();
     void createCommandPool();
     void createCommandBuffers();
-    void createSemaphores();
-    void setupDebugMessenger();
+    void createSyncObjects();
 
+    void setupDebugMessenger();
     VkShaderModule createShaderModule( const std::vector<char> &code );
     SwapChainSupportDetails querySwapChainSupport( VkPhysicalDevice device );
     VkSurfaceFormatKHR chooseSwapSurfaceFormat( const std::vector<VkSurfaceFormatKHR> &availableFormats ) const;
@@ -117,9 +117,13 @@ private: // Vulkan API
     VkQueue             presentQueue;
     VkSwapchainKHR      swapChain;
     VkCommandPool       commandPool;
+    VkCommandBuffer     commandBuffer;
+
+    VkSemaphore         imageAvailableSemaphore;
+    VkSemaphore         renderFinishedSemaphore;
+    VkFence             inFlightFence;
 
     std::vector<VkFramebuffer> swapChainFramebuffers;
-    std::vector<VkCommandBuffer> commandBuffers;
 
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
