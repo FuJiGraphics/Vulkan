@@ -69,6 +69,11 @@ void HelloTriangleApplication::mainLoop()
 
 void HelloTriangleApplication::cleanup()
 {
+    for ( auto framebuffer : swapChainFramebuffers )
+    {
+        vkDestroyFramebuffer( device, framebuffer, nullptr );
+    }
+    vkDestroyPipeline( device, graphicsPipeline, nullptr );
     vkDestroyPipelineLayout( device, pipelineLayout, nullptr );
     vkDestroyRenderPass( device, renderPass, nullptr );
     for ( auto imageView : swapChainImageViews )
@@ -351,8 +356,56 @@ void HelloTriangleApplication::createGraphicsPipeline()
         throw std::runtime_error( "failed to create pipeline layout!" );
     }
 
+    VkGraphicsPipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.stageCount = 2;
+    pipelineInfo.pStages = shaderStages;
+    pipelineInfo.pVertexInputState = &vertexInputInfo;
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+    pipelineInfo.pViewportState = &viewportState;
+    pipelineInfo.pRasterizationState = &rasterizer;
+    pipelineInfo.pMultisampleState = &multisampling;
+    pipelineInfo.pDepthStencilState = nullptr; // Optional
+    pipelineInfo.pColorBlendState = &colorBlending;
+    pipelineInfo.pDynamicState = &dynamicState;
+    pipelineInfo.layout = pipelineLayout;
+    pipelineInfo.renderPass = renderPass;
+    pipelineInfo.subpass = 0;
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
+    pipelineInfo.basePipelineIndex = -1;              // Optional
+
+    if ( vkCreateGraphicsPipelines( device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline ) !=
+         VK_SUCCESS )
+    {
+        throw std::runtime_error( "failed to create graphics pipeline!" );
+    }
+
     vkDestroyShaderModule( device, fragShaderModule, nullptr );
     vkDestroyShaderModule( device, vertShaderModule, nullptr );
+}
+
+void HelloTriangleApplication::createFramebuffers()
+{
+    swapChainFramebuffers.resize( swapChainImageViews.size() );
+
+    for ( size_t i = 0; i < swapChainImageViews.size(); i++ )
+    {
+        VkImageView attachments[] = { swapChainImageViews[i] };
+
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = renderPass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = swapChainExtent.width;
+        framebufferInfo.height = swapChainExtent.height;
+        framebufferInfo.layers = 1;
+
+        if ( vkCreateFramebuffer( device, &framebufferInfo, nullptr, &swapChainFramebuffers[i] ) != VK_SUCCESS )
+        {
+            throw std::runtime_error( "failed to create framebuffer!" );
+        }
+    }
 }
 
 void HelloTriangleApplication::createRenderPass()

@@ -64,9 +64,10 @@ private:
     void createSurface();
     void createSwapChain();
     void createImageView();
-    void createGraphicsPipeline();
     void createRenderPass();
-    
+    void createGraphicsPipeline();
+    void createFramebuffers();
+
     VkShaderModule createShaderModule( const std::vector<char> &code );
     SwapChainSupportDetails querySwapChainSupport( VkPhysicalDevice device );
     VkSurfaceFormatKHR chooseSwapSurfaceFormat( const std::vector<VkSurfaceFormatKHR> &availableFormats ) const;
@@ -87,12 +88,15 @@ private: // Window Application
 
 private: // Vulkan API
     VkInstance instance = VK_NULL_HANDLE;
+
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;
     VkQueue graphicsQueue = VK_NULL_HANDLE;
     VkSurfaceKHR surface = VK_NULL_HANDLE;
     VkQueue presentQueue = VK_NULL_HANDLE;
     VkSwapchainKHR swapChain = VK_NULL_HANDLE;
+
+    std::vector<VkFramebuffer> swapChainFramebuffers;
 
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
@@ -102,4 +106,5 @@ private: // Vulkan API
     VkRenderPass renderPass;
     VkPipelineLayout pipelineLayout;
 
+    VkPipeline graphicsPipeline;
 };
