@@ -96,6 +96,9 @@ private:
     void createCommandPool();
     void createCommandBuffers();
     void createSyncObjects();
+    void recreateSwapChain();
+
+    void cleanupSwapchain();
 
     VkShaderModule createShaderModule( const std::vector<char> &code );
     SwapChainSupportDetails querySwapChainSupport( VkPhysicalDevice device );

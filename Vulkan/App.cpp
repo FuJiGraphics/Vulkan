@@ -200,19 +200,14 @@ void App::cleanup()
         vkDestroyFence( m_Device, m_InFlightFences[i], nullptr );
     }
 
-    for ( auto &framebuffer : m_SwapChainFramebuffers )
-        vkDestroyFramebuffer( m_Device, framebuffer, nullptr );
-
     vkDestroyCommandPool( m_Device, m_CommandPool, nullptr );
 
     vkDestroyPipeline( m_Device, m_GraphicsPipeline, nullptr );
     vkDestroyPipelineLayout( m_Device, m_PipelineLayout, nullptr );
     vkDestroyRenderPass( m_Device, m_RenderPass, nullptr );
     
-    for ( auto &imageView : m_SwapChainImageViews )
-        vkDestroyImageView( m_Device, imageView, nullptr );
-    
-    vkDestroySwapchainKHR( m_Device, m_SwapChain, nullptr );
+    cleanupSwapchain();
+
     vkDestroyDevice( m_Device, nullptr );
     vkDestroySurfaceKHR( m_Instance, m_Surface, nullptr );
 
@@ -618,6 +613,26 @@ void App::createSyncObjects()
             throw std::runtime_error( "Failed to create synchronization objects for a frame.!" );
         }
     }
+}
+
+void App::recreateSwapChain()
+{
+    vkDeviceWaitIdle( m_Device );
+
+    cleanupSwapchain();
+
+    createSwapChain();
+    createImageView();
+    createFramebuffers();
+}
+
+void App::cleanupSwapchain()
+{
+    for ( auto &framebuffer : m_SwapChainFramebuffers )
+        vkDestroyFramebuffer( m_Device, framebuffer, nullptr );
+    for ( auto &imageView : m_SwapChainImageViews )
+        vkDestroyImageView( m_Device, imageView, nullptr );
+    vkDestroySwapchainKHR( m_Device, m_SwapChain, nullptr );
 }
 
 void App::setupDebugMessenger()
