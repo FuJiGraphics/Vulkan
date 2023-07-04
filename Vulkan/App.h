@@ -73,6 +73,8 @@ private:
     
      std::vector<const char *> getRequiredExtensions();
 
+     static void framebufferResizeCallback( GLFWwindow *window, int width, int height );
+
 private:
     void initWindow();
     void initVulkan();
@@ -132,6 +134,8 @@ private: // Vulkan API
     std::vector<VkSemaphore>  m_ImageAvailableSemaphores;
     std::vector<VkSemaphore>  m_RenderFinishedSemaphores;
     std::vector<VkFence>      m_InFlightFences;
+
+    bool m_FramebufferResized = false;
 
     std::vector<VkCommandBuffer> m_CommandBuffers;
 
