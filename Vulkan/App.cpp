@@ -108,6 +108,30 @@ void App::framebufferResizeCallback( GLFWwindow *window, int width, int height )
     app->m_FramebufferResized = true;
 }
 
+uint32_t App::findMemoryType( uint32_t typeFilter, VkMemoryPropertyFlags properties )
+{
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties( m_PhysicalDevice, &memProperties );
+    for ( uint32_t i = 0; i < memProperties.memoryTypeCount; ++i )
+    {
+        /*
+        VkMemoryRequirements::memoryTypeBits is a bitfield that sets a bit for every memoryType 
+        that is supported for the resource. Therefore we need to check if the bit at index i is
+        set while also testing the required memory property flags while iterating over the memory 
+        types. Leaving this here just in case I'm not the only one that got confused.
+        */
+        if ( typeFilter & ( 1 << i ) && 
+             ( memProperties.memoryTypes[i].propertyFlags & properties ) == properties )
+        {
+            return i;
+        }
+    }
+
+    throw std::runtime_error( "Failed to find suitable memory type!" );
+
+    return 0;
+}
+
 void App::recordCommandBuffer( VkCommandBuffer commandBuffer, uint32_t imageIndex )
 {
     VkCommandBufferBeginInfo beginInfo{};
@@ -133,7 +157,7 @@ void App::recordCommandBuffer( VkCommandBuffer commandBuffer, uint32_t imageInde
 
     vkCmdBeginRenderPass( commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE );
     vkCmdBindPipeline( commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline );
-
+   
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -142,13 +166,17 @@ void App::recordCommandBuffer( VkCommandBuffer commandBuffer, uint32_t imageInde
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport( commandBuffer, 0, 1, &viewport );
-
+    
     VkRect2D scissor{};
     scissor.offset = { 0, 0 };
     scissor.extent = m_SwapChainExtent;
     vkCmdSetScissor( commandBuffer, 0, 1, &scissor );
 
-    vkCmdDraw( commandBuffer, 3, 1, 0, 0 );
+    VkBuffer vertexBuffers[] = { m_VertexBuffer };
+    VkDeviceSize offsets[] = { 0 };
+    vkCmdBindVertexBuffers( commandBuffer, 0, 1, vertexBuffers, offsets );
+
+    vkCmdDraw( commandBuffer, static_cast<uint32_t>( triangle.size() ), 1, 0, 0 );
     vkCmdEndRenderPass( commandBuffer );
     if ( vkEndCommandBuffer( commandBuffer ) != VK_SUCCESS )
     {
@@ -185,6 +213,7 @@ void App::initVulkan()
     createGraphicsPipeline();
     createFramebuffers();
     createCommandPool();
+    createVertexBuffer();
     createCommandBuffers();
     createSyncObjects();
 }
@@ -201,12 +230,15 @@ void App::mainLoop()
 
 void App::cleanup()
 {
+   
     for ( int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i )
     {
         vkDestroySemaphore( m_Device, m_ImageAvailableSemaphores[i], nullptr );
         vkDestroySemaphore( m_Device, m_RenderFinishedSemaphores[i], nullptr );
         vkDestroyFence( m_Device, m_InFlightFences[i], nullptr );
     }
+    vkDestroyBuffer( m_Device, m_VertexBuffer, nullptr );
+    vkFreeMemory( m_Device, m_VertexBufferMemory, nullptr );
 
     vkDestroyCommandPool( m_Device, m_CommandPool, nullptr );
 
@@ -450,6 +482,9 @@ void App::createImageView()
 
 void App::createGraphicsPipeline()
 {
+    auto bindingDescription = Vertex::getBindingDescription();
+    auto attributeDescription = Vertex::getAttributeDescription();
+
     auto vertShaderCode = readFile( "vert.spv" );
     auto fragShaderCode = readFile( "frag.spv" );
 
@@ -472,8 +507,10 @@ void App::createGraphicsPipeline()
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>( attributeDescription.size() );
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -594,6 +631,43 @@ void App::createCommandPool()
     {
         throw std::runtime_error( "failed to create command pool!" );
     }
+
+}
+
+void App::createVertexBuffer()
+{
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof( triangle[0] ) * triangle.size();
+    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.flags = 0;
+
+    if ( vkCreateBuffer( m_Device, &bufferInfo, nullptr, &m_VertexBuffer ) != VK_SUCCESS )
+    {
+        throw std::runtime_error( "Failed to create vertex buffer." );
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements( m_Device, m_VertexBuffer, &memRequirements );
+    
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(
+        memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT );
+
+    if ( vkAllocateMemory( m_Device, &allocInfo, nullptr, &m_VertexBufferMemory ) != VK_SUCCESS )
+    {
+        throw std::runtime_error( "Failed to allocate vertex buffer memory!" );
+    }
+
+    vkBindBufferMemory( m_Device, m_VertexBuffer, m_VertexBufferMemory, 0 );
+
+    void *data;
+    vkMapMemory( m_Device, m_VertexBufferMemory, 0, bufferInfo.size, 0, &data );
+    memcpy( data, triangle.data(), (size_t)bufferInfo.size );
+    vkUnmapMemory( m_Device, m_VertexBufferMemory );
 
 }
 
