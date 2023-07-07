@@ -73,6 +73,12 @@ const std::vector<Vertex> triangle = { { {  0.0f,  -0.5f }, { 1.0f, 0.0f, 0.0f }
                                        { {  0.5f,   0.5f }, { 0.0f, 1.0f, 0.0f } },
                                        { { -0.5f,   0.5f }, { 0.0f, 0.0f, 1.0f } } };
 
+const std::vector<Vertex> rectangle = { { { -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
+                                        { {  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f } },
+                                        { {  0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } },
+                                        { { -0.5f,  0.5f }, { 0.0f, 0.0f, 0.0f } } };
+
+const std::vector<uint16_t> indices = { 0, 1, 2, 2, 3, 0 };
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -141,6 +147,7 @@ private:
     void createFramebuffers();
     void createCommandPool();
     void createVertexBuffer();
+    void createIndexBuffer();
     void createCommandBuffers();
     void createSyncObjects();
     void recreateSwapChain();
@@ -190,6 +197,8 @@ private: // Vulkan API
 
     VkBuffer m_VertexBuffer;
     VkDeviceMemory m_VertexBufferMemory;
+    VkBuffer m_IndexBuffer;
+    VkDeviceMemory m_IndexBufferMemory;
 
     std::vector<VkCommandBuffer> m_CommandBuffers;
 

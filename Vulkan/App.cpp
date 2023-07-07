@@ -210,8 +210,11 @@ void App::recordCommandBuffer( VkCommandBuffer commandBuffer, uint32_t imageInde
     VkBuffer vertexBuffers[] = { m_VertexBuffer };
     VkDeviceSize offsets[] = { 0 };
     vkCmdBindVertexBuffers( commandBuffer, 0, 1, vertexBuffers, offsets );
+    vkCmdBindIndexBuffer( commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16 );
 
-    vkCmdDraw( commandBuffer, static_cast<uint32_t>( triangle.size() ), 1, 0, 0 );
+    // vkCmdDraw( commandBuffer, static_cast<uint32_t>( triangle.size() ), 1, 0, 0 );
+    vkCmdDrawIndexed( commandBuffer, static_cast<uint32_t>( indices.size() ), 1, 0, 0, 0 );
+    
     vkCmdEndRenderPass( commandBuffer );
     if ( vkEndCommandBuffer( commandBuffer ) != VK_SUCCESS )
     {
@@ -249,6 +252,7 @@ void App::initVulkan()
     createFramebuffers();
     createCommandPool();
     createVertexBuffer();
+    createIndexBuffer();
     createCommandBuffers();
     createSyncObjects();
 }
@@ -272,6 +276,9 @@ void App::cleanup()
         vkDestroySemaphore( m_Device, m_RenderFinishedSemaphores[i], nullptr );
         vkDestroyFence( m_Device, m_InFlightFences[i], nullptr );
     }
+    vkDestroyBuffer( m_Device, m_IndexBuffer, nullptr );
+    vkFreeMemory( m_Device, m_IndexBufferMemory, nullptr );
+
     vkDestroyBuffer( m_Device, m_VertexBuffer, nullptr );
     vkFreeMemory( m_Device, m_VertexBufferMemory, nullptr );
 
@@ -298,7 +305,6 @@ void App::cleanup()
 
 void App::drawFrame()
 {
-    // TODO : Draw Triangle
     vkWaitForFences( m_Device, 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX );
     
     uint32_t imageIndex;
@@ -671,7 +677,7 @@ void App::createCommandPool()
 
 void App::createVertexBuffer()
 {
-    VkDeviceSize bufferSize = sizeof( triangle[0] ) * triangle.size();
+    VkDeviceSize bufferSize = sizeof( rectangle[0] ) * rectangle.size();
     
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -685,15 +691,47 @@ void App::createVertexBuffer()
 
     void *data;
     vkMapMemory( m_Device, stagingBufferMemory, 0, bufferSize, 0, &data );
-    memcpy( data, triangle.data(), (size_t)bufferSize );
+    memcpy( data, rectangle.data(), (size_t)bufferSize );
     vkUnmapMemory( m_Device, stagingBufferMemory );
 
-    createBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+    createBuffer( bufferSize, 
+                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | 
+                  VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_VertexBuffer, m_VertexBufferMemory );
     
     copyBuffer( stagingBuffer, m_VertexBuffer, bufferSize );
     vkDestroyBuffer( m_Device, stagingBuffer, nullptr );
     vkFreeMemory( m_Device, stagingBufferMemory, nullptr );
+}
+
+void App::createIndexBuffer()
+{
+    VkDeviceSize bufferSize = sizeof( indices[0] ) * indices.size();
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    createBuffer( bufferSize, 
+                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+                  VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+                  stagingBuffer, stagingBufferMemory );
+
+    void *data;
+    vkMapMemory( m_Device, stagingBufferMemory, 0, bufferSize, 0, &data );
+    memcpy( data, indices.data(), (size_t)bufferSize );
+    vkUnmapMemory( m_Device, stagingBufferMemory );
+
+    createBuffer( bufferSize, 
+                  VK_BUFFER_USAGE_TRANSFER_DST_BIT | 
+                  VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+                  m_IndexBuffer, m_IndexBufferMemory );
+
+    copyBuffer( stagingBuffer, m_IndexBuffer, bufferSize );
+
+    vkDestroyBuffer( m_Device, stagingBuffer, nullptr );
+    vkFreeMemory( m_Device, stagingBufferMemory, nullptr );
+
 }
 
 void App::createCommandBuffers()
