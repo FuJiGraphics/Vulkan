@@ -1,0 +1,7 @@
+BasedOnStyle: Microsoft
+AlignAfterOpenBracket: Align
+AlignEscapedNewlines: Left
+AllowShortIfStatementsOnASingleLine: Never
+BinPackParameters: 'false'
+Cpp11BracedListStyle: 'false'
+SpacesInParentheses: 'true'
