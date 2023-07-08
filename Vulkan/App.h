@@ -38,6 +38,13 @@ struct SwapChainSupportDetails
     std::vector<VkPresentModeKHR> presentModes;
 };
 
+struct UniformBufferObject
+{
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
+
 struct Vertex
 {
     glm::vec2 pos;
@@ -143,6 +150,7 @@ private:
     void createSwapChain();
     void createImageView();
     void createRenderPass();
+    void createDescriptorSetLayout(); 
     void createGraphicsPipeline();
     void createFramebuffers();
     void createCommandPool();
@@ -209,6 +217,7 @@ private: // Vulkan API
     VkExtent2D                 m_SwapChainExtent;
 
     VkRenderPass     m_RenderPass;
+    VkDescriptorSetLayout m_DescriptorSetLayout;
     VkPipelineLayout m_PipelineLayout;
 
     VkPipeline m_GraphicsPipeline;
