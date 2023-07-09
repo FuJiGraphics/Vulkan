@@ -248,11 +248,13 @@ void App::initVulkan()
     createSwapChain();
     createImageView();
     createRenderPass();
+    createDescriptorSetLayout();
     createGraphicsPipeline();
     createFramebuffers();
     createCommandPool();
     createVertexBuffer();
     createIndexBuffer();
+    createUniformBuffers();
     createCommandBuffers();
     createSyncObjects();
 }
@@ -270,6 +272,12 @@ void App::mainLoop()
 void App::cleanup()
 {
     cleanupSwapchain();
+
+    for ( size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i )
+    {
+        vkDestroyBuffer( m_Device, m_UniformBuffers[i], nullptr );
+        vkFreeMemory( m_Device, m_UniformBuffersMemory[i], nullptr );
+    }
 
     vkDestroyDescriptorSetLayout( m_Device, m_DescriptorSetLayout, nullptr );
    
@@ -312,18 +320,17 @@ void App::drawFrame()
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR( m_Device, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphores[m_CurrentFrame],
                                              VK_NULL_HANDLE, &imageIndex );
-
-    if ( result == VK_ERROR_OUT_OF_DATE_KHR || 
-         result == VK_SUBOPTIMAL_KHR || m_FramebufferResized )
+    if ( result == VK_ERROR_OUT_OF_DATE_KHR )
     {
-        m_FramebufferResized = false;
         recreateSwapChain();
         return;
     }
-    else if ( result != VK_SUCCESS )
+    else if ( result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR )
     {
         throw std::runtime_error( "failed to acquire swap chain image!" );
     }
+
+    updateUniformBuffer( m_CurrentFrame );
 
     vkResetFences( m_Device, 1, &m_InFlightFences[m_CurrentFrame] );
 
@@ -348,7 +355,7 @@ void App::drawFrame()
 
     if ( vkQueueSubmit( m_GraphicsQueue, 1, &submitInfo, m_InFlightFences[m_CurrentFrame] ) != VK_SUCCESS )
     {
-        throw std::runtime_error( "failed to submit draw command buffer!" );
+        throw std::runtime_error( "Failed to submit draw command buffer!" );
     }
 
     VkPresentInfoKHR presentInfo{};
@@ -365,14 +372,18 @@ void App::drawFrame()
 
     result = vkQueuePresentKHR( m_PresentQueue, &presentInfo );
 
-    if ( result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR )
+    if ( result == VK_ERROR_OUT_OF_DATE_KHR || 
+         result == VK_SUBOPTIMAL_KHR || 
+         m_FramebufferResized )
     {
+        m_FramebufferResized = false;
         recreateSwapChain();
     }
     else if ( result != VK_SUCCESS )
     {
-        throw std::runtime_error( "failed to present swap chain image!" );
+        throw std::runtime_error( "Failed to present swap chain image!" );
     }
+
 
     m_CurrentFrame = ( m_CurrentFrame + 1 ) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -525,9 +536,6 @@ void App::createImageView()
 
 void App::createGraphicsPipeline()
 {
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescription = Vertex::getAttributeDescription();
-
     auto vertShaderCode = readFile( "vert.spv" );
     auto fragShaderCode = readFile( "frag.spv" );
 
@@ -547,6 +555,9 @@ void App::createGraphicsPipeline()
     fragShaderStageInfo.pName = "main";
 
     VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+    
+    auto bindingDescription = Vertex::getBindingDescription();
+    auto attributeDescription = Vertex::getAttributeDescription();
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -604,12 +615,12 @@ void App::createGraphicsPipeline()
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0;
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &m_DescriptorSetLayout;
 
     if ( vkCreatePipelineLayout( m_Device, &pipelineLayoutInfo, nullptr, &m_PipelineLayout ) != VK_SUCCESS )
     {
-        throw std::runtime_error( "failed to create pipeline layout!" );
+        throw std::runtime_error( "Failed to create pipeline layout!" );
     }
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -631,7 +642,7 @@ void App::createGraphicsPipeline()
     if ( vkCreateGraphicsPipelines( m_Device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_GraphicsPipeline ) !=
          VK_SUCCESS )
     {
-        throw std::runtime_error( "failed to create graphics pipeline!" );
+        throw std::runtime_error( "Failed to create graphics pipeline!" );
     }
 
     vkDestroyShaderModule( m_Device, fragShaderModule, nullptr );
@@ -740,19 +751,24 @@ void App::createUniformBuffers()
 {
     VkDeviceSize bufferSize = sizeof( UniformBufferObject );
 
-    uniformBuffers.resize( MAX_FRAMES_IN_FLIGHT );
-    uniformBuffersMemory.resize( MAX_FRAMES_IN_FLIGHT );
-    uniformBuffersMapped.resize( MAX_FRAMES_IN_FLIGHT );
+    m_UniformBuffers.resize( MAX_FRAMES_IN_FLIGHT );
+    m_UniformBuffersMemory.resize( MAX_FRAMES_IN_FLIGHT );
+    m_UniformBuffersMapped.resize( MAX_FRAMES_IN_FLIGHT );
 
     for ( size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i )
     {
         createBuffer( bufferSize, 
                       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-                      uniformBuffers[i],
-                      _mm_haddd_epi8
-                      )
+                      m_UniformBuffers[i],
+                      m_UniformBuffersMemory[i] );
+
+        vkMapMemory( m_Device, 
+                     m_UniformBuffersMemory[i], 
+                     0, bufferSize, 0, 
+                     &m_UniformBuffersMapped[i] );
+
     }
 }
 
@@ -832,6 +848,24 @@ void App::cleanupSwapchain()
     vkDestroySwapchainKHR( m_Device, m_SwapChain, nullptr );
 }
 
+void App::updateUniformBuffer( uint32_t currentImage )
+{
+    static auto startTime = std::chrono::high_resolution_clock::now();
+
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>( currentTime - startTime ).count();
+
+    UniformBufferObject ubo{};
+    ubo.model = glm::rotate( glm::mat4( 1.0f ), time * glm::radians( 90.0f ), glm::vec3( 0.0f, 0.0f, 1.0f ) );
+    ubo.view =
+        glm::lookAt( glm::vec3( 2.0f, 2.0f, 2.0f ), glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 0.0f, 0.0f, 1.0f ) );
+    ubo.proj =
+        glm::perspective( glm::radians( 45.0f ), m_SwapChainExtent.width / (float)m_SwapChainExtent.height, 0.1f, 10.0f );
+    ubo.proj[1][1] *= -1;
+
+    memcpy( m_UniformBuffersMapped[currentImage], &ubo, sizeof( ubo ) );
+}
+
 void App::setupDebugMessenger()
 {
     if ( !enableValidationLayers )
@@ -885,10 +919,10 @@ void App::createDescriptorSetLayout()
 {
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
     uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.pImmutableSamplers = nullptr;
     uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -900,11 +934,6 @@ void App::createDescriptorSetLayout()
     {
         throw std::runtime_error( "Failed to create descriptor set layout. " );
     }
-
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &m_DescriptorSetLayout;
 }
 
 void App::pickphysicalDevice()

@@ -4,6 +4,7 @@
 
 // This header includes the Vulkan header automatically.
 #define GLFW_INCLUDE_VULKAN
+#define GLM_FORCE_RADIANS
 #include <GLFW/glfw3.h>
 
 #include <optional>
@@ -11,7 +12,10 @@
 #include <fstream>
 
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <array>
+
+#include <chrono>
 
 const uint32_t WIN_WIDTH = 800;
 const uint32_t WIN_HEIGHT = 600;
@@ -132,7 +136,7 @@ private:
      void copyBuffer( VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size );
 
 
-   private:
+private:
     void initWindow();
     void initVulkan();
     void mainLoop();
@@ -156,11 +160,14 @@ private:
     void createCommandPool();
     void createVertexBuffer();
     void createIndexBuffer();
+    void createUniformBuffers();
     void createCommandBuffers();
     void createSyncObjects();
     void recreateSwapChain();
 
     void cleanupSwapchain();
+
+    void updateUniformBuffer( uint32_t currentImage );
 
     VkShaderModule createShaderModule( const std::vector<char> &code );
     SwapChainSupportDetails querySwapChainSupport( VkPhysicalDevice device );
@@ -208,6 +215,10 @@ private: // Vulkan API
     VkBuffer m_IndexBuffer;
     VkDeviceMemory m_IndexBufferMemory;
 
+    std::vector<VkBuffer> m_UniformBuffers;
+    std::vector<VkDeviceMemory> m_UniformBuffersMemory;
+    std::vector<void *> m_UniformBuffersMapped;
+    
     std::vector<VkCommandBuffer> m_CommandBuffers;
 
     std::vector<VkFramebuffer> m_SwapChainFramebuffers;
