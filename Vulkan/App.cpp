@@ -213,6 +213,12 @@ void App::recordCommandBuffer( VkCommandBuffer commandBuffer, uint32_t imageInde
     vkCmdBindIndexBuffer( commandBuffer, m_IndexBuffer, 0, VK_INDEX_TYPE_UINT16 );
 
     // vkCmdDraw( commandBuffer, static_cast<uint32_t>( triangle.size() ), 1, 0, 0 );
+    
+    vkCmdBindDescriptorSets( m_CommandBuffers[m_CurrentFrame], 
+                             VK_PIPELINE_BIND_POINT_GRAPHICS, 
+                             m_PipelineLayout, 0, 1,
+                             m_DescriptorSets.data(), 0, nullptr );
+
     vkCmdDrawIndexed( commandBuffer, static_cast<uint32_t>( indices.size() ), 1, 0, 0, 0 );
     
     vkCmdEndRenderPass( commandBuffer );
@@ -255,6 +261,8 @@ void App::initVulkan()
     createVertexBuffer();
     createIndexBuffer();
     createUniformBuffers();
+    createDescriptorPool();
+    createDescriptorSets();
     createCommandBuffers();
     createSyncObjects();
 }
@@ -279,6 +287,7 @@ void App::cleanup()
         vkFreeMemory( m_Device, m_UniformBuffersMemory[i], nullptr );
     }
 
+    vkDestroyDescriptorPool( m_Device, m_DescriptorPool, nullptr );
     vkDestroyDescriptorSetLayout( m_Device, m_DescriptorSetLayout, nullptr );
    
     for ( int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i )
@@ -583,7 +592,7 @@ void App::createGraphicsPipeline()
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
 
     VkPipelineMultisampleStateCreateInfo multisampling{};
@@ -770,6 +779,67 @@ void App::createUniformBuffers()
                      &m_UniformBuffersMapped[i] );
 
     }
+}
+
+void App::createDescriptorPool()
+{
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = static_cast<uint32_t>( MAX_FRAMES_IN_FLIGHT );
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = static_cast<uint32_t>( MAX_FRAMES_IN_FLIGHT );
+
+    VkResult result = vkCreateDescriptorPool( m_Device, &poolInfo, nullptr, &m_DescriptorPool );
+    if ( result != VK_SUCCESS )
+    {
+        throw std::runtime_error( "Failed to create Descriptor pool." );
+    }
+}
+
+void App::createDescriptorSets()
+{
+    std::vector<VkDescriptorSetLayout> layouts( MAX_FRAMES_IN_FLIGHT, 
+                                                m_DescriptorSetLayout );
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>( MAX_FRAMES_IN_FLIGHT );
+    allocInfo.descriptorPool = m_DescriptorPool;
+    allocInfo.pSetLayouts = layouts.data();
+
+    m_DescriptorSets.resize( MAX_FRAMES_IN_FLIGHT );
+    VkResult result = vkAllocateDescriptorSets( m_Device, 
+                                                &allocInfo, 
+                                                m_DescriptorSets.data() );
+    if ( result != VK_SUCCESS )
+    {
+        throw std::runtime_error( "Failed to allocae descriptor sets" );
+    }
+
+    for ( size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i )
+    {
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = m_UniformBuffers[i];
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof( UniformBufferObject );
+        
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = m_DescriptorSets[i];
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+        descriptorWrite.pImageInfo = nullptr; // Optional
+        descriptorWrite.pTexelBufferView = nullptr;
+
+        vkUpdateDescriptorSets( m_Device, 1, &descriptorWrite, 0, nullptr );
+    }
+
 }
 
 void App::createCommandBuffers()

@@ -5,6 +5,7 @@
 // This header includes the Vulkan header automatically.
 #define GLFW_INCLUDE_VULKAN
 #define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include <GLFW/glfw3.h>
 
 #include <optional>
@@ -44,9 +45,9 @@ struct SwapChainSupportDetails
 
 struct UniformBufferObject
 {
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 proj;
+    alignas( 16 ) glm::mat4 model;
+    alignas( 16 ) glm::mat4 view;
+    alignas( 16 ) glm::mat4 proj;
 };
 
 struct Vertex
@@ -161,6 +162,8 @@ private:
     void createVertexBuffer();
     void createIndexBuffer();
     void createUniformBuffers();
+    void createDescriptorPool();
+    void createDescriptorSets();
     void createCommandBuffers();
     void createSyncObjects();
     void recreateSwapChain();
@@ -219,6 +222,9 @@ private: // Vulkan API
     std::vector<VkDeviceMemory> m_UniformBuffersMemory;
     std::vector<void *> m_UniformBuffersMapped;
     
+    VkDescriptorPool m_DescriptorPool;
+    std::vector<VkDescriptorSet> m_DescriptorSets;
+
     std::vector<VkCommandBuffer> m_CommandBuffers;
 
     std::vector<VkFramebuffer> m_SwapChainFramebuffers;
